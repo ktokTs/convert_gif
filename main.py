@@ -1,18 +1,18 @@
 from itertools import count
 import math
-
+import os
 import cv2
 from PIL import Image
-from pathlib import Path
 
 START = 0
 END = 1
+PROGRESS_COUNT = 20
 
 RED = '\033[31m'
 GREEN = '\033[32m'
 RESET = '\033[0m'
 
-# 動画のfpsとフレーム数を返す
+# 動画のfpsとフレーム数、横幅を返す
 def get_fps_n_count(video_path):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -45,9 +45,8 @@ def resize_based_on_aspect_ratio(aspect_ratio, base_width, max_width):
 
 # プログレスバーを表示
 def print_progress(end, now, step):
-    n = 20
-    i = int(n * now / end)
-    bar = '*' * i + " " * (n-i-1)
+    i = int(PROGRESS_COUNT * now / end)
+    bar = '*' * i + " " * (PROGRESS_COUNT - i - 1)
     print(f"\r\033[K[{bar}]", end="")
     if (now + step >= end):
         print()
@@ -83,13 +82,13 @@ def get_frame_range(video_path, start_frame, stop_frame, step_frame, max_width):
 
 # gifを作る
 def make_gif(filename, im_list, duration_time):
-    im_list[0].save(filename, duration=duration_time, save_all=True, append_images=im_list[1:], loop=0, optimize=True)
+    im_list[0].save(filename, duration=duration_time, save_all=True, append_images=im_list[1:], loop=0)
 
 # 入力を促して、変換前のファイル名取得
 def get_filename():
     print(f"{GREEN}ファイル名を指定{RESET}")
     video_file = input()
-    filename = Path(video_file).stem
+    filename, ext = os.path.splitext(video_file)
     return video_file, filename
 
 # 入力を促して、どこからどこまでをgifにするかを決める
@@ -142,13 +141,13 @@ def main():
         print(f"{RED}動画ファイルを開けませんでした{RESET}")
         return
 
-    max_width = get_resize(width)
-
     video_len = count / fps
     print(f"{GREEN}ビデオの長さ：", video_len, "s{RESET}")
     if (video_len >= 30):
         print(f"{RED}ビデオの長さが30秒以上のため、中断{RESET}")
         return
+
+    max_width = get_resize(width)
 
     # gifにしたい範囲を指定
     start_frame = get_start_or_end_frame(fps, 0, START)
